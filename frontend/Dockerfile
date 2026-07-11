@@ -13,6 +13,7 @@ RUN npm install --legacy-peer-deps
 COPY . .
 
 # Build React app
+ENV CI=false
 RUN npm run build
 
 # Production Stage
