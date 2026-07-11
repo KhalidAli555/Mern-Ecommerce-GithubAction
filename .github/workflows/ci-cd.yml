@@ -68,7 +68,6 @@ jobs:
     name: Trivy Filesystem Scan
     needs: build-test
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -83,7 +82,7 @@ jobs:
           ignore-unfixed: true
           exit-code: 0
 
-      Build & Push Docker Images:
+      Build-and-Push-Docker-Images:
       name: Build & Push Docker Images
       needs: trivy-filesystem-scan
       runs-on: ubuntu-latest
