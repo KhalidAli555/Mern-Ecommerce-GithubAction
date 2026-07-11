@@ -1,23 +1,37 @@
+# Build Stage
 FROM node:20-alpine AS build
 
 WORKDIR /app
 
+# Copy package files
 COPY package*.json ./
+
+# Install dependencies
 RUN npm install --legacy-peer-deps
 
+# Copy source code
 COPY . .
-# React embeds REACT_APP_* values at build time.  Pass this value from CI using
-# Docker Buildx's `build-args` (for example, the REACT_APP_BASE_URL repository
-# variable) rather than expecting a Kubernetes runtime environment variable.
-ARG REACT_APP_BASE_URL
-ENV REACT_APP_BASE_URL=${REACT_APP_BASE_URL}
+
+# Build React app
 RUN npm run build
 
+# Production Stage
 FROM nginx:1.27-alpine
 
+# Copy React build files
 COPY --from=build /app/build /usr/share/nginx/html
 
-RUN printf 'server {\n    listen 80;\n    server_name _;\n\n    root /usr/share/nginx/html;\n    index index.html;\n\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}\n' > /etc/nginx/conf.d/default.conf
+# Configure Nginx for React Router
+RUN printf 'server {\n\
+    listen 80;\n\
+    server_name _;\n\
+    root /usr/share/nginx/html;\n\
+    index index.html;\n\
+\n\
+    location / {\n\
+        try_files $uri $uri/ /index.html;\n\
+    }\n\
+}\n' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
