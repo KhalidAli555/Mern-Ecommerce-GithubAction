@@ -2,11 +2,11 @@ name: React CI/CD
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build-test:
-    # Use a self-hosted runner that can access your kubeadm cluster.
     runs-on: ubuntu-latest
 
     env:
@@ -18,24 +18,40 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      #  Step 2: Install Node.js
+      # Step 2: Setup Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      # Step 3: Install Dependencies
-      - name: Install dependencies
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      # ==========================
+      # FRONTEND
+      # ==========================
+
+      - name: Install Frontend Dependencies
         working-directory: frontend
         run: npm ci
 
-      # Step 4: Build  application
-      - name: Build application
+      - name: Build Frontend
         working-directory: frontend
         run: npm run build
-      # Step 5: Run Unit Tests
-      - name: Run tests
+
+      - name: Run Frontend Tests
         working-directory: frontend
         run: npm test -- --watchAll=false --passWithNoTests
 
-      
+      # ==========================
+      # BACKEND
+      # ==========================
+
+      - name: Install Backend Dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run Backend Tests
+        working-directory: backend
+        run: npm test --if-present
