@@ -1,0 +1,41 @@
+name: React CI/CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-test:
+    # Use a self-hosted runner that can access your kubeadm cluster.
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }}
+      NAMESPACE: mern-ecommerce
+
+    steps:
+      # Step 1: Checkout Repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      #  Step 2: Install Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      # Step 3: Install Dependencies
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # Step 4: Build  application
+      - name: Build application
+        working-directory: frontend
+        run: npm run build
+      # Step 5: Run Unit Tests
+      - name: Run tests
+        working-directory: frontend
+        run: npm test -- --watchAll=false --passWithNoTests
+
+      

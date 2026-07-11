@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: mern-ecommerce
+data:
+  # Build the frontend image with this same URL as REACT_APP_BASE_URL.
+  FRONTEND_API_BASE_URL: "https://api.your-domain.example.com"
+  ORIGIN: "https://your-frontend.example.com"
+  LOGIN_TOKEN_EXPIRATION: "7d"
+  OTP_EXPIRATION_TIME: "10"
+  PASSWORD_RESET_TOKEN_EXPIRATION: "15"
+  COOKIE_EXPIRATION_DAYS: "7"
+  PRODUCTION: "true"
+  MONGO_INITDB_DATABASE: "ecommerce"
