@@ -29,10 +29,7 @@ jobs:
             frontend/package-lock.json
             backend/package-lock.json
 
-      # ==========================
       # Frontend
-      # ==========================
-
       - name: Install Frontend Dependencies
         working-directory: frontend
         run: npm install --legacy-peer-deps
@@ -47,10 +44,7 @@ jobs:
         working-directory: frontend
         run: npm test -- --watchAll=false --passWithNoTests
 
-      # ==========================
       # Backend
-      # ==========================
-
       - name: Install Backend Dependencies
         working-directory: backend
         run: npm ci
@@ -101,7 +95,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Build & Push Frontend
       - name: Build & Push Frontend Image
         uses: docker/build-push-action@v6
         with:
@@ -110,7 +103,6 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/mern-frontend:latest
 
-      # Build & Push Backend
       - name: Build & Push Backend Image
         uses: docker/build-push-action@v6
         with:
@@ -134,7 +126,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Scan Frontend Image
       - name: Scan Frontend Docker Image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -144,7 +135,6 @@ jobs:
           ignore-unfixed: true
           exit-code: 0
 
-      # Scan Backend Image
       - name: Scan Backend Docker Image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -153,3 +143,80 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: 0
+
+  # ==========================================
+  # Job 5 - Deploy to Amazon EKS
+  # ==========================================
+  deploy-to-eks:
+    name: Deploy to Amazon EKS
+    needs: trivy-image-scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: latest
+
+      - name: Configure kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region ${{ secrets.AWS_REGION }} \
+            --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+      - name: Verify Cluster Connection
+        run: kubectl get nodes
+
+      - name: Create Namespace
+        run: kubectl apply -f kubernetes/namespace.yml
+
+      - name: Apply ConfigMap
+        run: kubectl apply -f kubernetes/configmap.yml
+
+      - name: Apply Secret
+        run: kubectl apply -f kubernetes/secret.yml
+
+      - name: Deploy Database
+        run: kubectl apply -f kubernetes/database/
+
+      - name: Deploy Backend
+        run: kubectl apply -f kubernetes/backend/
+
+      - name: Deploy Frontend
+        run: kubectl apply -f kubernetes/frontend/
+
+      - name: Verify Database Rollout
+        run: kubectl rollout status deployment/database -n mern-ecommerce
+
+      - name: Verify Backend Rollout
+        run: kubectl rollout status deployment/backend -n mern-ecommerce
+
+      - name: Verify Frontend Rollout
+        run: kubectl rollout status deployment/frontend -n mern-ecommerce
+
+      - name: Display Cluster Resources
+        run: |
+          echo "========== Nodes =========="
+          kubectl get nodes
+
+          echo "========== Pods =========="
+          kubectl get pods -n mern-ecommerce
+
+          echo "========== Deployments =========="
+          kubectl get deployments -n mern-ecommerce
+
+          echo "========== Services =========="
+          kubectl get svc -n mern-ecommerce
+
+          echo "========== Namespaces =========="
+          kubectl get ns
