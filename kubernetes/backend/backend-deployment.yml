@@ -34,7 +34,7 @@ spec:
       containers:
         - name: backend
           # Replace with the image built from backend/Dockerfile.
-          image: khalidale/backend:IMAGE_TAG
+          image: khalidale/backend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
