@@ -1,18 +1,12 @@
 apiVersion: v1
-kind: PersistentVolume
+kind: PersistentVolumeClaim
 metadata:
-  name: mongodb-pv
-  labels:
-    app: database
+  name: mongodb-pvc
+  namespace: mern-ecommerce
 spec:
-  capacity:
-    storage: 10Gi
-  volumeMode: Filesystem
   accessModes:
     - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: manual
-  hostPath:
-    # Suitable for a single-node development cluster. Use a CSI-backed volume in production.
-    path: /mnt/data/mern-ecommerce-mongodb
-    type: DirectoryOrCreate
+  storageClassName: gp2
+  resources:
+    requests:
+      storage: 10Gi
