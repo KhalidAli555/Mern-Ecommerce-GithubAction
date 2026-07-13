@@ -186,6 +186,12 @@ jobs:
       - name: Apply Secret
         run: kubectl apply -f kubernetes/secret.yml
 
+      - name: Apply PersistentVolume
+        run: kubectl apply -f kubernetes/pv.yml
+
+      - name: Apply PersistentVolumeClaim
+        run: kubectl apply -f kubernetes/pvc.yml
+
       - name: Deploy Database
         run: kubectl apply -f kubernetes/database/
 
