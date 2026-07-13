@@ -1,47 +1,75 @@
-# MERN E-Commerce Application with Production CI/CD Pipeline on Amazon EKS
+# MERN E-Commerce Application with Production-Ready CI/CD Pipeline on Amazon EKS
 
 ## Overview
 
-This project demonstrates an end-to-end production-style DevOps workflow for a MERN (MongoDB, Express.js, React.js, Node.js) e-commerce application.
+This project demonstrates a complete end-to-end DevOps workflow for deploying a **production-ready MERN (MongoDB, Express.js, React.js, Node.js) e-commerce application** on **Amazon Elastic Kubernetes Service (EKS)**.
 
-The complete infrastructure is provisioned using **Terraform**, the application is containerized with **Docker**, continuously integrated and deployed using **GitHub Actions**, and automatically deployed to **Amazon EKS (Elastic Kubernetes Service)**.
+The infrastructure is provisioned using **Terraform**, the application is containerized using **Docker**, and the complete CI/CD pipeline is automated using **GitHub Actions**. The application is deployed to Kubernetes running on Amazon EKS with monitoring provided by **Prometheus** and **Grafana**, installed using **Helm**.
 
-The pipeline includes automated build, testing, security scanning with Trivy, Docker image publishing to Docker Hub, and Kubernetes deployment.
+The CI/CD pipeline performs automated builds, testing, vulnerability scanning with **Trivy**, Docker image publishing to **Docker Hub**, and automatic deployment to Amazon EKS.
 
 ---
 
 # Architecture
 
 ```text
-Developer
-    │
-Git Push
-    │
-GitHub Repository
-    │
-GitHub Actions
-    │
-├── Build & Test
-├── Trivy Filesystem Scan
-├── Build Docker Images
-├── Push Images to Docker Hub
-├── Trivy Image Scan
-│
-AWS IAM Authentication
-    │
-Amazon EKS Cluster
-(Provisoned using Terraform)
-    │
-├── Namespace
-├── ConfigMap
-├── Secret
-├── Persistent Volume
-├── Persistent Volume Claim
-├── MongoDB
-├── Backend
-└── Frontend
-    │
-Running MERN Application
+                                  Developer
+                                      │
+                                  Git Push
+                                      │
+                                      ▼
+                           GitHub Repository
+                                      │
+                                      ▼
+                        GitHub Actions CI/CD Pipeline
+                                      │
+        ┌─────────────────────────────────────────────────────┐
+        │                                                     │
+        │  • Checkout Source Code                             │
+        │  • Install Dependencies                             │
+        │  • Build React Application                          │
+        │  • Run Tests                                        │
+        │  • Trivy Filesystem Scan                            │
+        │  • Build Docker Images                              │
+        │  • Push Images to Docker Hub                        │
+        │  • Trivy Image Scan                                 │
+        │  • Configure AWS Credentials                        │
+        │  • Deploy to Amazon EKS                             │
+        │                                                     │
+        └─────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+                              Amazon EKS Cluster
+                           (Provisioned by Terraform)
+                                      │
+        ┌─────────────────────────────────────────────────────┐
+        │ Namespace                                           │
+        │ ConfigMap                                           │
+        │ Secret                                              │
+        │ Persistent Volume                                  │
+        │ Persistent Volume Claim                            │
+        │ MongoDB Deployment                                 │
+        │ Backend Deployment                                 │
+        │ Frontend Deployment                                │
+        │ Services                                           │
+        │                                                    │
+        └─────────────────────────────────────────────────────
+                                      │
+                                      ▼
+                           MERN E-Commerce Application
+
+                                      │
+                    ┌─────────────────┴──────────────────┐
+                    │                                    │
+                    ▼                                    ▼
+            Prometheus (Helm)                    Grafana (Helm)
+                    │                                    │
+                    └──────────────┬─────────────────────┘
+                                   │
+                            ServiceMonitor
+                                   │
+                                   ▼
+                        Backend Application Metrics
 ```
 
 ---
@@ -49,25 +77,54 @@ Running MERN Application
 # Technology Stack
 
 ## Frontend
-- React.js
+
+* React.js
 
 ## Backend
-- Node.js
-- Express.js
+
+* Node.js
+* Express.js
 
 ## Database
-- MongoDB
 
-## DevOps
-- Docker
-- Docker Hub
-- Kubernetes
-- Amazon EKS
-- Terraform
-- GitHub Actions
-- Trivy
-- AWS IAM
-- kubectl
+* MongoDB
+
+## Containerization
+
+* Docker
+* Docker Hub
+
+## Cloud Platform
+
+* Amazon Web Services (AWS)
+* Amazon Elastic Kubernetes Service (EKS)
+
+## Infrastructure as Code
+
+* Terraform
+
+## Kubernetes
+
+* Kubernetes
+* Helm
+
+## CI/CD
+
+* GitHub Actions
+
+## Monitoring
+
+* Prometheus
+* Grafana
+* Prometheus Operator
+* Alertmanager
+* Node Exporter
+* kube-state-metrics
+* ServiceMonitor
+
+## Security
+
+* Trivy
 
 ---
 
@@ -76,11 +133,15 @@ Running MERN Application
 ```text
 .
 ├── backend/
+│
 ├── frontend/
+│
 ├── kubernetes/
 │   ├── backend/
 │   ├── database/
 │   ├── frontend/
+│   ├── monitoring/
+│   │   └── backend-servicemonitor.yml
 │   ├── namespace.yml
 │   ├── configmap.yml
 │   ├── secret.yml
@@ -100,18 +161,23 @@ Running MERN Application
 │   ├── addons.tf
 │   └── outputs.tf
 │
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml
+│
 ├── screenshots/
 │   ├── architecture/
 │   ├── terraform/
 │   ├── github-actions/
 │   ├── kubernetes/
+│   ├── monitoring/
+│   │   ├── prometheus-targets.png
+│   │   ├── grafana-dashboard.png
+│   │   ├── servicemonitor.png
+│   │   └── monitoring-stack.png
 │   ├── docker/
 │   ├── aws/
 │   └── application/
-│
-├── .github/
-│   └── workflows/
-│       └── ci-cd.yml
 │
 └── README.md
 ```
@@ -120,128 +186,232 @@ Running MERN Application
 
 # Infrastructure as Code (Terraform)
 
-Terraform provisions:
+Terraform provisions the complete AWS infrastructure, including:
 
-- Amazon VPC
-- Public & Private Subnets
-- Internet Gateway
-- Route Tables
-- Security Groups
-- IAM Roles
-- Amazon EKS Cluster
-- Managed Node Group
-- EKS Add-ons
+* Amazon VPC
+* Public Subnets
+* Private Subnets
+* Internet Gateway
+* Route Tables
+* Security Groups
+* IAM Roles
+* Amazon EKS Cluster
+* Managed Node Group
+* EKS Add-ons
 
 ---
 
 # CI/CD Pipeline
 
+The GitHub Actions workflow automates the entire deployment process.
+
+Pipeline stages include:
+
 1. Checkout Repository
 2. Setup Node.js
 3. Install Dependencies
 4. Build React Application
-5. Run Tests
+5. Run Automated Tests
 6. Trivy Filesystem Scan
 7. Build Docker Images
-8. Push Docker Images to Docker Hub
+8. Push Images to Docker Hub
 9. Trivy Image Scan
-10. Authenticate with AWS
+10. Configure AWS Credentials
 11. Connect to Amazon EKS
 12. Deploy Kubernetes Resources
-13. Running Application
+13. Deploy Updated Application
 
 ---
 
 # Pipeline Stages
 
 ## Build & Test
-- Checkout repository
-- Setup Node.js
-- Install frontend dependencies
-- Build frontend
-- Run frontend tests
-- Install backend dependencies
 
-## Trivy Filesystem Scan
-- Scan repository for HIGH and CRITICAL vulnerabilities.
+* Checkout source code
+* Install frontend dependencies
+* Build React application
+* Execute frontend tests
+* Install backend dependencies
 
-## Build & Push Docker Images
-- Login to Docker Hub
-- Build frontend image
-- Build backend image
-- Push both images
+## Security Scanning
 
-## Trivy Image Scan
-- Scan pushed Docker images
+### Trivy Filesystem Scan
 
-## Deploy to Amazon EKS
-- Configure AWS credentials
-- Generate kubeconfig
-- Verify cluster connection
-- Deploy Namespace
-- Deploy ConfigMap
-- Deploy Secret
-- Deploy PV & PVC
-- Deploy MongoDB
-- Deploy Backend
-- Deploy Frontend
+Scans the project source code for HIGH and CRITICAL vulnerabilities before building Docker images.
+
+### Trivy Image Scan
+
+Scans Docker images after they are built to identify known vulnerabilities before deployment.
 
 ---
 
-# Kubernetes Resources
+# Kubernetes Deployment
 
-- Namespace
-- ConfigMap
-- Secret
-- Persistent Volume
-- Persistent Volume Claim
-- MongoDB Deployment
-- Backend Deployment
-- Frontend Deployment
-- Services
+The application is deployed to Amazon EKS using Kubernetes manifests.
+
+Resources include:
+
+* Namespace
+* ConfigMap
+* Secret
+* Persistent Volume
+* Persistent Volume Claim
+* MongoDB Deployment
+* Backend Deployment
+* Frontend Deployment
+* Kubernetes Services
+* NGINX Ingress
+
+---
+
+# Monitoring Stack
+
+Application and cluster monitoring are implemented using the **kube-prometheus-stack Helm Chart**.
+
+Monitoring components include:
+
+* Prometheus
+* Grafana
+* Alertmanager
+* Prometheus Operator
+* Node Exporter
+* kube-state-metrics
+
+The monitoring stack was installed using Helm.
+
+---
+
+# Prometheus Monitoring
+
+Prometheus continuously collects metrics from:
+
+* Kubernetes API Server
+* Kubernetes Nodes
+* kubelet
+* kube-proxy
+* CoreDNS
+* Prometheus
+* Grafana
+* Alertmanager
+* kube-state-metrics
+* Node Exporter
+* Backend ServiceMonitor
+
+All monitoring targets are successfully discovered and remain in the **UP** state.
+
+---
+
+# Backend Service Monitoring
+
+The backend application is monitored using a Kubernetes **ServiceMonitor**.
+
+Prometheus automatically discovers the backend service and collects application metrics.
+
+Application monitoring includes:
+
+* Backend availability
+* Application health metrics
+* Container resource utilization
+
+> If you added Prometheus instrumentation (`prom-client`) to the backend, application metrics such as HTTP request count, request latency, and error rates are also collected.
+
+---
+
+# Grafana Dashboard
+
+Grafana provides centralized visualization of Kubernetes and application metrics.
+
+The dashboard includes:
+
+## Kubernetes Metrics
+
+* Cluster Health
+* Node CPU Usage
+* Node Memory Usage
+* Disk Usage
+* Pod Status
+* Pod Restarts
+
+## Infrastructure Metrics
+
+* Node Exporter Metrics
+* kube-state-metrics
+* Kubernetes API Metrics
+
+## Application Metrics
+
+* Backend Availability
+* Container CPU Usage
+* Container Memory Usage
+
+> If Prometheus client instrumentation was added to the backend, dashboards can also include HTTP request rate, response latency, and application error rate.
 
 ---
 
 # GitHub Repository Secrets
 
-| Secret | Purpose |
-|---------|---------|
-| AWS_ACCESS_KEY_ID | AWS Authentication |
-| AWS_SECRET_ACCESS_KEY | AWS Authentication |
-| AWS_REGION | AWS Region |
-| EKS_CLUSTER_NAME | Amazon EKS Cluster |
-| DOCKERHUB_USERNAME | Docker Hub |
-| DOCKERHUB_TOKEN | Docker Hub |
+| Secret                | Purpose                   |
+| --------------------- | ------------------------- |
+| AWS_ACCESS_KEY_ID     | AWS Authentication        |
+| AWS_SECRET_ACCESS_KEY | AWS Authentication        |
+| AWS_REGION            | AWS Region                |
+| EKS_CLUSTER_NAME      | Amazon EKS Cluster        |
+| DOCKERHUB_USERNAME    | Docker Hub Authentication |
+| DOCKERHUB_TOKEN       | Docker Hub Authentication |
 
 ---
 
 # Features
 
-- MERN Stack
-- Dockerized Application
-- Infrastructure as Code (Terraform)
-- Amazon EKS Deployment
-- Kubernetes
-- GitHub Actions CI/CD
-- Docker Hub Integration
-- Trivy Security Scanning
-- ConfigMaps
-- Secrets
-- Persistent Volumes
-- Persistent Volume Claims
-- Automated Deployment
+* MERN Stack Application
+* Dockerized Microservices
+* Infrastructure as Code using Terraform
+* Amazon EKS Deployment
+* Kubernetes Workloads
+* GitHub Actions CI/CD
+* Docker Hub Integration
+* Trivy Security Scanning
+* ConfigMaps
+* Secrets
+* Persistent Volumes
+* Persistent Volume Claims
+* Helm Package Management
+* Prometheus Monitoring
+* Grafana Dashboards
+* Backend ServiceMonitor
+* Kubernetes Cluster Monitoring
+* Automated Application Deployment
 
 ---
 
 # Future Improvements
 
-- SonarQube Integration
-- Helm Charts
-- Argo CD
-- Prometheus
-- Grafana
-- Horizontal Pod Autoscaler
-- AWS Load Balancer Controller
-- GitHub OIDC Authentication
+* Argo CD (GitOps)
+* AWS Load Balancer Controller
+* GitHub OIDC Authentication
+* Centralized Logging (Loki or EFK Stack)
+* Alert Notifications (Slack / Microsoft Teams / Email)
 
 ---
+
+# Learning Outcomes
+
+This project demonstrates practical experience with:
+
+* Linux
+* Git & GitHub
+* Docker
+* Docker Hub
+* Kubernetes
+* Amazon EKS
+* Terraform
+* GitHub Actions
+* Helm
+* Prometheus
+* Grafana
+* Trivy
+* Infrastructure as Code
+* Continuous Integration
+* Continuous Deployment
+* Kubernetes Monitoring
+* Production-style Cloud Application Deployment
