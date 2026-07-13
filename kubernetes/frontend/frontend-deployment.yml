@@ -21,7 +21,7 @@ spec:
       containers:
         - name: frontend
           # Replace with the image built from frontend/Dockerfile.
-          image: khalidale/frontend:latest
+          image: khalidale/mern-frontend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

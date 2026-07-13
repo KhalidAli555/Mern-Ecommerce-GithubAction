@@ -5,8 +5,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-COPY controllers database middleware models routes seed utils ./
-COPY index.js ./
+COPY . .
 
 EXPOSE 8000
 

@@ -17,35 +17,36 @@ spec:
       labels:
         app: database
     spec:
-      securityContext:
-        fsGroup: 999
-        fsGroupChangePolicy: OnRootMismatch
-        seccompProfile:
-          type: RuntimeDefault
       containers:
         - name: database
           image: mongo:latest
           imagePullPolicy: IfNotPresent
+
           ports:
-            - name: mongodb
-              containerPort: 27017
+            - containerPort: 27017
+              name: mongodb
+
           envFrom:
             - configMapRef:
                 name: app-config
+
           env:
             - name: MONGO_INITDB_ROOT_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: MONGO_INITDB_ROOT_USERNAME
+
             - name: MONGO_INITDB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: MONGO_INITDB_ROOT_PASSWORD
+
           volumeMounts:
             - name: mongodb-storage
               mountPath: /data/db
+
           resources:
             requests:
               cpu: 250m
@@ -53,21 +54,19 @@ spec:
             limits:
               cpu: "1"
               memory: 1Gi
+
           readinessProbe:
             tcpSocket:
               port: mongodb
             initialDelaySeconds: 10
             periodSeconds: 10
+
           livenessProbe:
             tcpSocket:
               port: mongodb
             initialDelaySeconds: 30
             periodSeconds: 20
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
+
       volumes:
         - name: mongodb-storage
           persistentVolumeClaim:
