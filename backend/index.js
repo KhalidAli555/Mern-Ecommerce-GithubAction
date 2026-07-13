@@ -19,6 +19,10 @@ const { connectToDB } = require("./database/db")
 // server init
 const server=express()
 
+// Metrics handler
+const metricsHandler = require("./metrics");
+server.get("/metrics", metricsHandler);
+
 // database connection
 connectToDB()
 
