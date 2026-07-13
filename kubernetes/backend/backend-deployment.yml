@@ -6,7 +6,7 @@ metadata:
   labels:
     app: backend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: backend
@@ -34,7 +34,7 @@ spec:
       containers:
         - name: backend
           # Replace with the image built from backend/Dockerfile.
-          image: khalidale/backend:latest
+          image: khalidale/mern-backend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
