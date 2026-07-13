@@ -186,6 +186,12 @@ jobs:
       - name: Apply Secret
         run: kubectl apply -f kubernetes/secret.yml
 
+      - name: Apply PersistentVolume
+        run: kubectl apply -f kubernetes/pv.yml
+
+      - name: Apply PersistentVolumeClaim
+        run: kubectl apply -f kubernetes/pvc.yml
+
       - name: Deploy Database
         run: kubectl apply -f kubernetes/database/
 
@@ -194,15 +200,6 @@ jobs:
 
       - name: Deploy Frontend
         run: kubectl apply -f kubernetes/frontend/
-
-      - name: Verify Database Rollout
-        run: kubectl rollout status deployment/database -n mern-ecommerce
-
-      - name: Verify Backend Rollout
-        run: kubectl rollout status deployment/backend -n mern-ecommerce
-
-      - name: Verify Frontend Rollout
-        run: kubectl rollout status deployment/frontend -n mern-ecommerce
 
       - name: Display Cluster Resources
         run: |
