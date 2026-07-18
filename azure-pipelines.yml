@@ -4,21 +4,99 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '20.x'
-  displayName: 'Install Node.js'
+stages:
 
-# Build Frontend
-- script: |
-    cd frontend
-    npm install
-    npm run build
-  displayName: 'Build Frontend'
+# ==========================================
+# Stage 1 - Build & Test
+# ==========================================
 
-# Build Backend
-- script: |
-    cd backend
-    npm install
-  displayName: 'Build Backend'
+- stage: Build
+  displayName: Build & Test
+
+  jobs:
+
+  - job: BuildApplication
+    displayName: Build MERN Application
+
+    steps:
+
+    - checkout: self
+
+    # Install Node.js
+    - task: NodeTool@0
+      displayName: Install Node.js
+      inputs:
+        versionSpec: '20.x'
+
+    # -------------------------------
+    # Frontend
+    # -------------------------------
+
+    - script: |
+        npm install --legacy-peer-deps
+      workingDirectory: frontend
+      displayName: Install Frontend Dependencies
+
+    - script: |
+        npm run build
+      workingDirectory: frontend
+      displayName: Build Frontend
+      env:
+        CI: false
+
+    - script: |
+        npm test -- --watchAll=false --passWithNoTests
+      workingDirectory: frontend
+      displayName: Test Frontend
+
+    # -------------------------------
+    # Backend
+    # -------------------------------
+
+    - script: |
+        npm ci
+      workingDirectory: backend
+      displayName: Install Backend Dependencies
+
+# ==========================================
+# Stage 2 - Build Docker Images
+# ==========================================
+
+- stage: BuildDockerImages
+  displayName: Build Docker Images
+  dependsOn: Build
+
+  jobs:
+
+  - job: DockerBuild
+    displayName: Build Frontend & Backend Images
+
+    steps:
+
+    - checkout: self
+
+    # Build Frontend Image
+
+    - task: Docker@2
+      displayName: Build Frontend Docker Image
+      inputs:
+        command: build
+        repository: khalidale/frontend
+        Dockerfile: frontend/Dockerfile
+        buildContext: frontend
+        tags: |
+          latest
+          $(Build.BuildId)
+
+    # Build Backend Image
+
+    - task: Docker@2
+      displayName: Build Backend Docker Image
+      inputs:
+        command: build
+        repository: khalidale/mern-backend
+        Dockerfile: backend/Dockerfile
+        buildContext: backend
+        tags: |
+          latest
+          $(Build.BuildId)
