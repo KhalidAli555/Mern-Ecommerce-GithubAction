@@ -1,102 +1,157 @@
+
 trigger:
 - main
 
 pool:
   vmImage: ubuntu-latest
 
-stages:
+variables:
+  dockerRegistryServiceConnection: 'dockerhub-service-connection'
+  azureSubscription: 'azure-service-connection'
+  frontendRepository: 'khalidale/mern-frontend'
+  backendRepository: 'khalidale/mern-backend'
+  frontendWebApp: 'frontend-webapp'
+  backendWebApp: 'backend-webapp'
 
-# ==========================================
-# Stage 1 - Build & Test
-# ==========================================
+stages:
 
 - stage: Build
   displayName: Build & Test
-
   jobs:
-
   - job: BuildApplication
-    displayName: Build MERN Application
-
     steps:
-
     - checkout: self
-
-    # Install Node.js
     - task: NodeTool@0
-      displayName: Install Node.js
       inputs:
         versionSpec: '20.x'
 
-    # -------------------------------
-    # Frontend
-    # -------------------------------
-
-    - script: |
-        npm install --legacy-peer-deps
+    - script: npm install --legacy-peer-deps
       workingDirectory: frontend
-      displayName: Install Frontend Dependencies
+      displayName: Install Frontend
 
-    - script: |
-        npm run build
+    - script: npm run build
       workingDirectory: frontend
       displayName: Build Frontend
       env:
         CI: false
 
-    - script: |
-        npm test -- --watchAll=false --passWithNoTests
+    - script: npm test -- --watchAll=false --passWithNoTests
       workingDirectory: frontend
       displayName: Test Frontend
 
-    # -------------------------------
-    # Backend
-    # -------------------------------
+    - script: npm ci
+      workingDirectory: backend
+      displayName: Install Backend
+
+- stage: TrivyFilesystemScan
+  dependsOn: Build
+  jobs:
+  - job: Scan
+    steps:
+    - checkout: self
+    - script: |
+        sudo apt-get update
+        sudo apt-get install -y wget
+        wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.65.0_Linux-64bit.deb
+        sudo dpkg -i trivy_0.65.0_Linux-64bit.deb
+      displayName: Install Trivy
 
     - script: |
-        npm ci
-      workingDirectory: backend
-      displayName: Install Backend Dependencies
-
-# ==========================================
-# Stage 2 - Build Docker Images
-# ==========================================
+        trivy fs . --severity HIGH,CRITICAL --ignore-unfixed
+      displayName: Trivy Filesystem Scan
 
 - stage: BuildDockerImages
-  displayName: Build Docker Images
-  dependsOn: Build
-
+  dependsOn: TrivyFilesystemScan
   jobs:
-
-  - job: DockerBuild
-    displayName: Build Frontend & Backend Images
-
+  - job: BuildImages
     steps:
-
     - checkout: self
 
-    # Build Frontend Image
-
     - task: Docker@2
-      displayName: Build Frontend Docker Image
       inputs:
         command: build
-        repository: khalidale/frontend
+        repository: $(frontendRepository)
         Dockerfile: frontend/Dockerfile
         buildContext: frontend
         tags: |
           latest
           $(Build.BuildId)
 
-    # Build Backend Image
-
     - task: Docker@2
-      displayName: Build Backend Docker Image
       inputs:
         command: build
-        repository: khalidale/mern-backend
+        repository: $(backendRepository)
         Dockerfile: backend/Dockerfile
         buildContext: backend
         tags: |
           latest
           $(Build.BuildId)
+
+- stage: PushDockerImages
+  dependsOn: BuildDockerImages
+  jobs:
+  - job: PushImages
+    steps:
+    - task: Docker@2
+      displayName: Login Docker Hub
+      inputs:
+        command: login
+        containerRegistry: $(dockerRegistryServiceConnection)
+
+    - task: Docker@2
+      inputs:
+        command: push
+        containerRegistry: $(dockerRegistryServiceConnection)
+        repository: $(frontendRepository)
+        tags: |
+          latest
+          $(Build.BuildId)
+
+    - task: Docker@2
+      inputs:
+        command: push
+        containerRegistry: $(dockerRegistryServiceConnection)
+        repository: $(backendRepository)
+        tags: |
+          latest
+          $(Build.BuildId)
+
+- stage: TrivyImageScan
+  dependsOn: PushDockerImages
+  jobs:
+  - job: ScanImages
+    steps:
+    - script: |
+        trivy image $(frontendRepository):latest
+        trivy image $(backendRepository):latest
+      displayName: Scan Images
+
+- stage: DeployFrontend
+  dependsOn: TrivyImageScan
+  jobs:
+  - deployment: Frontend
+    environment: production
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebAppContainer@1
+            inputs:
+              azureSubscription: $(azureSubscription)
+              appName: $(frontendWebApp)
+              containers: $(frontendRepository):latest
+
+- stage: DeployBackend
+  dependsOn: DeployFrontend
+  jobs:
+  - deployment: Backend
+    environment: production
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebAppContainer@1
+            inputs:
+              azureSubscription: $(azureSubscription)
+              appName: $(backendWebApp)
+              containers: $(backendRepository):latest
